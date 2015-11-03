@@ -1,0 +1,22 @@
+{
+  "nick": "suebot",
+  "userName": "seubot",
+  "password": null,
+  "realName": "seubot",
+  "server": "irc.freenode.net",
+  "owner": "owner",
+  "commandPrefix": "!",
+  "ssl": false,
+  "port": 6667,
+  "timeout": 256,
+  "debug": false,
+  "mainChannel": "#seubot",
+  "channels": ["#seubot"],
+  "autoRejoin": true,
+  "showErrors": false,
+  "channelPrefixes": "&#",
+  "messageSplit": 512,
+  "datafolder": "data",
+  "tmpfolder": "tmp",
+  "configfolder": "conf"
+}
