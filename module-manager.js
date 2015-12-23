@@ -1,9 +1,7 @@
 var Bjson   = require('bj-stream-rpc'),
     winston = require('winston'),
     path    = require('path'),
-    fs = require('fs'),
-    AWS = require('aws-sdk'),
-    s3 = new AWS.S3();
+    fs = require('fs');
 
 var reEscape = function(s) {
     return s.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
@@ -112,37 +110,6 @@ function moduleManager(irc) {
 				});
 				if(!done) return cb(null, res);
 			});
-		},
-		kvput: function(key, value, cb) {
-			if(key.length === 0) return cb("Please give us a key");
-			s3.putObject({Bucket: config.dataBucket, Key: "/kvstore/" + key, Body: value}, function(err, data) {
-				cb(err);
-			});
-		},
-		kvget: function(key, cb) {
-			if(key.length === 0) return cb("Please give us a key");
-			s3.getObject({Bucket: config.dataBucket, Key: "/kvstore/" + key}, function(err, data) {
-				if(err) return cb(err);
-				cb(null, data.Body.toString());
-			});
-		},
-		kvscan: function(prefix, cb) {
-			var results = [];
-			var handleResponse = function(err, data) {
-				if(err) return cb(err);
-
-				console.log(data);
-				results = results.concat(data.Contents.map(function(el) { return el.Key.replace(/^\/kvstore\//, ""); }));
-
-					console.log(results);
-				if(this.hasNextPage()) {
-					this.nextPage(handleResponse);
-				} else {
-					return cb(null, results);
-				}
-			};
-
-			s3.listObjects({Bucket: config.dataBucket, Prefix: "/kvstore/" + prefix}, handleResponse);
 		},
 	};
 
