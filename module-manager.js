@@ -1,3 +1,5 @@
+"use strict";
+
 var Bjson       = require('bj-stream-rpc'),
     winston     = require('winston'),
     path        = require('path'),
@@ -32,32 +34,6 @@ module.exports = function(conf, irc) {
   return moduleManager;
 };
 
-var supportedConfigTypes = [
-  {
-    exts: [".json"],
-    test: null, //TODO
-    parse: function(data, loc, cb) {
-      try {
-        cb(null, JSON.parse(data));
-      } catch(ex) {
-        cb(ex);
-      }
-    },
-  },
-  {
-    exts: ['.js'],
-    test: null,
-    parse: function(data, loc, cb) {
-      try {
-        cb(null, require(loc));
-      } catch(ex) {
-        cb(ex);
-      }
-    }
-  }
-];
-
-
 function moduleManager(irc) {
   var managerFns = {
     sayTo: function(to, args) {
@@ -68,23 +44,12 @@ function moduleManager(irc) {
       args = Array.prototype.slice.call(arguments);
       managerFns.sayTo.apply(this, [config.mainChannel].concat(args));
     },
-    getConfig: function(name, cb) {
-      var fullPath = path.join(config.configfolder, name);
-      var done = false;
-      fs.readFile(fullPath,{encoding: 'utf8'}, function(err, res) {
-        if(err) return cb(err);
+  };
 
-        var ext = path.extname(fullPath);
-        supportedConfigTypes.forEach(function(type) {
-          if(_.any(type.exts, function(e) { return e === ext; })) {
-            type.parse(res, fullPath, cb);
-            done = true;
-            return false;
-          }
-        });
-        if(!done) return cb(null, res);
-      });
-    },
+  var fnResolver = (name, cb) => {
+    return function(args) {
+      server.map.apply(this, [name].concat(args.concat(cb)));
+    };
   };
 
   let quotedSplit = new SnailEscape();
@@ -99,7 +64,7 @@ function moduleManager(irc) {
       server.broadcast("irc_message", msg);
       var primaryFrom = (msg.to == irc.me) ? msg.from : msg.to;
       var text = msg.message;
-      if(text == "!LIST_CLIENTS") console.log(server);
+      if(text == "!LIST_CLIENTS") winston.debug(server);
       if(text.substring(0, config.commandPrefix.length) == config.commandPrefix) {
         var re = new RegExp('^' + reEscape(config.commandPrefix) + '(\\S*)\\s*(.*)$', 'g');
         var rem = re.exec(text);
