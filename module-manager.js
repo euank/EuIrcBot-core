@@ -1,38 +1,12 @@
-var Bjson   = require('bj-stream-rpc'),
-    winston = require('winston'),
-    path    = require('path'),
-    fs = require('fs');
+var Bjson       = require('bj-stream-rpc'),
+    winston     = require('winston'),
+    path        = require('path'),
+    fs          = require('fs'),
+    SnailEscape = require('snailescape.js');
 
 var reEscape = function(s) {
     return s.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
 };
-
-function quotedSplit(str) {
-  var res = [];
-  var currentStr = '';
-  var inQuotes = false;
-  for(var i=0;i<str.length;i++) {
-    if(inQuotes && str[i] === '"') {
-      res.push(currentStr);
-      inQuotes = false;
-      currentStr = '';
-    } else if(str[i] === '"' && !inQuotes) {
-      inQuotes = true;
-      if(currentStr !== '') res.push(currentStr);
-      currentStr = '';
-    } else if(str[i] === ' ' && !inQuotes) {
-      if(currentStr !== '') res.push(currentStr);
-      currentStr = '';
-    } else if(str[i] === "\\") {
-      i++;
-      currentStr += str[i];
-    } else {
-      currentStr += str[i];
-    }
-  }
-  if(currentStr !== '') res.push(currentStr);
-  return res;
-}
 
 function stringifyArgs(args) {
   var strParts = [];
@@ -113,6 +87,7 @@ function moduleManager(irc) {
     },
   };
 
+  let quotedSplit = new SnailEscape();
   // Create our server on a well-known port
   var server = new Bjson.NamedTcpServer("0.0.0.0", 52531, managerFns, {buffer: true}, function(err) {
     if(err) {
@@ -132,7 +107,8 @@ function moduleManager(irc) {
         var remainder = rem.length == 3 ? rem[2] : "";
         var respTo = primaryFrom;
 
-        server.broadcast("command", [command, remainder, quotedSplit(remainder), respTo, msg.from, msg.to, text]);
+        var parts = quotedSplit.parse(remainder).parts || remainder.split(" ");
+        server.broadcast("command", [command, remainder, parts, respTo, msg.from, msg.to, text]);
       }
     });
   });
