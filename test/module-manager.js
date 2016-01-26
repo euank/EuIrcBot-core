@@ -51,7 +51,7 @@ describe('core', () => {
     });
   });
 
-  it('should rebroadcast unknown commands', (done) => {
+  it('should rebroadcast unknown commands error case', (done) => {
     var client1 = new Bjson.NamedTcpClient("localhost", 52531, "c1", 1, {}, function(err) {
       expect(err).not.to.be.ok;
       var client2 = new Bjson.NamedTcpClient("localhost", 52531, "c2", 1, {}, function(err) {
@@ -67,7 +67,7 @@ describe('core', () => {
     });
   });
 
-  it('should rebroadcast unknown commands', (done) => {
+  it('should rebroadcast unknown commands success case', (done) => {
     var client1 = new Bjson.NamedTcpClient("localhost", 52531, "c1", 1, {testr: (a, cb) => { cb(null, 42); }}, function(err) {
       expect(err).not.to.be.ok;
       var client2 = new Bjson.NamedTcpClient("localhost", 52531, "c2", 1, {}, function(err) {
