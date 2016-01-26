@@ -18,9 +18,9 @@ MockIRC.prototype.send = function(to, str) {
 util.inherits(MockIRC, EventEmitter);
 
 describe('core', () => {
+  var mock = new MockIRC("bot");
+  mm({commandPrefix: '!'})(mock);
   it('should broadcast commands', (done) => {
-    var mock = new MockIRC("bot");
-    mm({commandPrefix: '!'})(mock);
 
     var fns = {
       command: function(arr) {
@@ -46,7 +46,39 @@ describe('core', () => {
 
     mock.on('line', function(line) {
       expect(line).to.eql("#foo: test response");
+      client.close();
       done();
     });
+  });
+
+  it('should rebroadcast unknown commands', (done) => {
+    var client1 = new Bjson.NamedTcpClient("localhost", 52531, "c1", 1, {}, function(err) {
+      expect(err).not.to.be.ok;
+      var client2 = new Bjson.NamedTcpClient("localhost", 52531, "c2", 1, {}, function(err) {
+        expect(err).not.to.be.ok;
+        client1.request('test', [], function(err, resp) {
+          // Error because there's nothing serving up 'test'
+          expect(err).to.be.ok;
+          client1.close();
+          client2.close();
+          done();
+        });
+      });
+    });
+  });
+
+  it('should rebroadcast unknown commands', (done) => {
+    var client1 = new Bjson.NamedTcpClient("localhost", 52531, "c1", 1, {testr: (a, cb) => { cb(null, 42); }}, function(err) {
+      expect(err).not.to.be.ok;
+      var client2 = new Bjson.NamedTcpClient("localhost", 52531, "c2", 1, {}, function(err) {
+        expect(err).not.to.be.ok;
+        client2.request('testr', ["arg"], function(err, resp) {
+          expect(err).not.to.be.ok;
+          expect(resp).to.eql(42);
+          done();
+        });
+      });
+    });
+
   });
 });

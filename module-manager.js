@@ -46,20 +46,37 @@ function moduleManager(irc) {
     },
   };
 
-  var fnResolver = (name, cb) => {
-    return function(args) {
-      server.map.apply(this, [name].concat(args.concat(cb)));
-    };
+  var fnResolver = (name, resolved) => {
+    resolved(null, function(args) {
+      args = Array.prototype.slice.call(arguments);
+      var cb = args.pop();
+      var resArgs = [name].concat(args);
+      resArgs.push((ign, res) => {
+        if(Object.keys(res).length === 0) {
+          return cb("No clients had this function");
+        }
+        // TODO, is this sane?
+        var passingClientName = Object.keys(res).reduce((lhs, rhs) => {
+          if(!res[rhs].error) {
+            return rhs;
+          }
+          return lhs;
+        });
+        var passingClient = res[passingClientName];
+        return cb(passingClient.error, passingClient.result);
+      });
+      server.map.apply(server, resArgs);
+    });
   };
 
   let quotedSplit = new SnailEscape();
   // Create our server on a well-known port
-  var server = new Bjson.NamedTcpServer("0.0.0.0", 52531, managerFns, {buffer: true}, function(err) {
+  var server = new Bjson.NamedTcpServer("0.0.0.0", 52531, managerFns, {fnResolver: fnResolver, buffer: true}, function(err) {
     if(err) {
       winston.error("Could not create NamedTcpServer", {err: err});
       return;
     }
-    // Woo!
+
     irc.on('message', function(msg) {
       server.broadcast("irc_message", msg);
       var primaryFrom = (msg.to == irc.me) ? msg.from : msg.to;
@@ -77,4 +94,5 @@ function moduleManager(irc) {
       }
     });
   });
+  return server;
 }
